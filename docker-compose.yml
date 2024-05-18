@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  core:
+    image: web-service:0.0.1
+    environment: # Defines environment variables for the container
+      - EXPOSED_CONTAINER_PORT=8090
+      - DATABASE_URL=mysql://root:password123@host.docker.internal:4406/db_items
+      - DEFAULT_PASSWORD_HASH_POSTFIX=notreallyhashed
+    build: # Configuration for building the Docker image (Optional)
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8090:8090 # Maps port 8090 on the host to port 8090 on the container

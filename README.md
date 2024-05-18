@@ -36,3 +36,10 @@ If the DB is accessible, tables will be automatically created when the app start
 
 ### auto generated docs
 http://127.0.0.1:8000/docs
+
+### Build Docker Image
+`docker build -t web-service:0.0.1 .`
+
+### Run the built docker image with the following command
+
+`docker-compose up --remove-orphans -d`

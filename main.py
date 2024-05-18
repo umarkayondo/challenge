@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 from fastapi import FastAPI
 
@@ -13,7 +14,9 @@ from pydantic import BaseModel
 
 Base = declarative_base()
 
-engine = create_engine('mysql://testuser:pass@localhost/items')
+database_url = os.getenv("DATABASE_URL", "mysql://testuser:pass@localhost/items")
+
+engine = create_engine(database_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -80,7 +83,7 @@ Base.metadata.create_all(bind=engine)
 
 def create_user(user: UserCreate):
     db = SessionLocal()
-    fake_hashed_password = user.password + "notreallyhashed"
+    fake_hashed_password = user.password +os.getenv("DEFAULT_PASSWORD_HASH_POSTFIX", "notreallyhashed")
     db_user = User(email=user.email, hashed_password=fake_hashed_password)
     db.add(db_user)
     db.commit()
