@@ -80,7 +80,7 @@ app = FastAPI()
 
 
 class ItemCreate(BaseModel):
-    title: Optional[bool] = True
+    title: Optional[str] = None
     status: Optional[StatusEnum] = None
     description: Optional[str] = None
     id: Optional[int] = None
