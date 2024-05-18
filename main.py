@@ -79,18 +79,10 @@ def get_db():
 app = FastAPI()
 
 
-# Schemas for request and response validation
-class ItemBase(BaseModel):
-    title: str
-    status: StatusEnum
+class ItemCreate(BaseModel):
+    title: Optional[bool] = True
+    status: Optional[StatusEnum] = None
     description: Optional[str] = None
-
-
-class ItemCreate(ItemBase):
-    pass
-
-
-class Item(ItemBase):
     id: Optional[int] = None
     owner_id: int
     status: StatusEnum  # Added status field to schema
@@ -99,25 +91,16 @@ class Item(ItemBase):
         orm_mode = True
 
 
-class UserBase(BaseModel):
-    email: str
-
-
-class UserCreate(UserBase):
-    password: str
-
-
-class User(UserBase):
+class UserCreate(BaseModel):
+    email: Optional[str] = None
+    password: Optional[str] = None
     id: Optional[int] = None
     is_active: Optional[bool] = True
-    items: List[Item] = []
+
+    # items: List[ItemCreate] = []
 
     class Config:
         orm_mode = True
-
-
-class UserId(BaseModel):
-    id: int
 
 
 class StatusUpdate(BaseModel):
@@ -147,7 +130,7 @@ def create_user(db: Session, user: UserCreate):
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-        return db_user
+        return UserCreate(id=db_user.id, email=db_user.email)
     except ValidationError as x:
         print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=f"{x}")
@@ -170,7 +153,8 @@ def create_user_item(db: Session, item: ItemCreate, user_id: int):
         db.add(db_item)
         db.commit()
         db.refresh(db_item)
-        return db_item
+        return ItemCreate(id=db_item.id, title=db_item.title, status=db_item.status,
+                          description=db_item.description)
     except ValidationError as x:
         raise HTTPException(status_code=400, detail=f"{x}")
     except Exception as e:
@@ -199,7 +183,8 @@ def update_item_status(db: Session, item_id: int, status: StatusEnum):
         db.commit()
         db.refresh(item)
         add_status_history(db, item, old_status, status)  # Add status change history
-        return item
+        return ItemCreate(id=item.id, title=item.title, status=item.status,
+                          description=item.description)
     except ValidationError as x:
         raise HTTPException(status_code=400, detail=f"{x}")
     except Exception as e:
@@ -262,7 +247,7 @@ def read_root():
     return {"status": "Success", "message": "Application is healthy"}
 
 
-@app.post("/users/", response_model=User)
+@app.post("/users/", response_model=UserCreate)
 def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
     """
     API endpoint to create a new user.
@@ -274,7 +259,7 @@ def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
     return create_user(db, user)
 
 
-@app.post("/users/{user_id}/items/", response_model=Item)
+@app.post("/users/{user_id}/items/", response_model=ItemCreate)
 def create_item_for_user(user_id: int, item: ItemCreate, db: Session = Depends(get_db)):
     """
     API endpoint to create a new item for a specific user.
@@ -288,7 +273,7 @@ def create_item_for_user(user_id: int, item: ItemCreate, db: Session = Depends(g
 
 
 # Endpoint to update item status
-@app.put("/items/{item_id}/status", response_model=Item)
+@app.put("/items/{item_id}/status", response_model=ItemCreate)
 def update_item_status_endpoint(item_id: int, status_update: StatusUpdate, db: Session = Depends(get_db)):
     """
     API endpoint to update the status of an item.
@@ -302,7 +287,7 @@ def update_item_status_endpoint(item_id: int, status_update: StatusUpdate, db: S
 
 
 # Endpoint to get items by status
-@app.get("/items/status/{status}", response_model=List[Item])
+@app.get("/items/status/{status}", response_model=List[ItemCreate])
 def get_items_by_status_endpoint(status: StatusEnum, db: Session = Depends(get_db)):
     """
     API endpoint to retrieve items by status.
