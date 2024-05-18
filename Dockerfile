@@ -33,6 +33,7 @@ COPY requirements.txt requirements.txt
 
 # Install the Python dependencies specified in the requirements.txt file without using the cache
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --force-reinstall 'sqlalchemy<2.0.0'
 
 # Copy the entire contents of the current directory into the container's /app directory
 COPY . .
