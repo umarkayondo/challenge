@@ -80,12 +80,10 @@ app = FastAPI()
 
 
 class ItemCreate(BaseModel):
-    title: Optional[str] = None
-    status: Optional[StatusEnum] = None
+    title: str
+    status: StatusEnum
     description: Optional[str] = None
     id: Optional[int] = None
-    owner_id: int
-    status: StatusEnum  # Added status field to schema
 
     class Config:
         orm_mode = True
@@ -149,15 +147,17 @@ def create_user_item(db: Session, item: ItemCreate, user_id: int):
     :return: Created item object
     """
     try:
-        db_item = Item(**item.dict(), owner_id=user_id)
+        db_item = Item(title=item.title, description=item.description, status=item.status, owner_id=user_id)
         db.add(db_item)
         db.commit()
         db.refresh(db_item)
         return ItemCreate(id=db_item.id, title=db_item.title, status=db_item.status,
                           description=db_item.description)
     except ValidationError as x:
+        print(traceback.format_exc())
         raise HTTPException(status_code=400, detail=f"{x}")
     except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"{e}")
 
 
